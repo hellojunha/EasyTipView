@@ -152,6 +152,7 @@ public extension EasyTipView {
         let damping = preferences.animating.springDamping
         let velocity = preferences.animating.springVelocity
         
+        self.animated = animated
         presentingView = view
         arrange(withinSuperview: superview)
         
@@ -190,14 +191,23 @@ public extension EasyTipView {
         let damping = preferences.animating.springDamping
         let velocity = preferences.animating.springVelocity
         
-        UIView.animate(withDuration: preferences.animating.dismissDuration, delay: 0, usingSpringWithDamping: damping, initialSpringVelocity: velocity, options: [.curveEaseInOut], animations: { 
+        let animations : () -> () = {
             self.transform = self.preferences.animating.dismissTransform
             self.alpha = self.preferences.animating.dismissFinalAlpha
-        }) { (finished) -> Void in
+        }
+        
+        let completions : (Bool) -> () = { _ in
             completion?()
             self.delegate?.easyTipViewDidDismiss(self)
             self.removeFromSuperview()
             self.transform = CGAffineTransform.identity
+        }
+        
+        if animated {
+            UIView.animate(withDuration: preferences.animating.dismissDuration, delay: 0, usingSpringWithDamping: damping, initialSpringVelocity: velocity, options: [.curveEaseInOut], animations: animations, completion: completions)
+        } else {
+            animations()
+            completions(true)
         }
     }
 }
@@ -324,6 +334,7 @@ open class EasyTipView: UIView {
     fileprivate(set) open var preferences: Preferences
     private let content: Content
     private var tapBlocker: UIView?
+    private var animated: Bool = true
     
     // MARK: - Lazy variables -
     
